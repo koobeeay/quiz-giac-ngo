@@ -157,6 +157,23 @@
             line-height: 1.6;
             text-align: left;
         }
+        #result-score {
+            text-align: center;
+            font-size: 1.3rem;
+            color: var(--dark-gray);
+        }
+        #result-score strong {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+        }
+        #result-group {
+            text-align: center;
+            background-color: var(--light-primary);
+            border: 1px dashed var(--primary-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 25px;
+        }
 
         #typewriter-text {
             font-style: italic;
@@ -219,16 +236,20 @@
             align-items: center;
         }
         .editor-item input[type="text"],
-        .editor-item input[type="number"] {
+        .editor-item input[type="number"],
+        .editor-item textarea {
             width: 100%;
             padding: 8px 12px;
             border: 1px solid var(--gray);
             border-radius: 5px;
             font-size: 1rem;
             margin-bottom: 10px;
+            font-family: inherit; /* Đảm bảo textarea dùng đúng font */
+            resize: vertical; /* Cho phép thay đổi chiều cao */
         }
         .editor-item input[type="text"]:focus,
-        .editor-item input[type="number"]:focus {
+        .editor-item input[type="number"]:focus,
+        .editor-item textarea:focus {
             border-color: var(--primary-color);
             outline: none;
             box-shadow: 0 0 5px var(--light-primary);
@@ -251,10 +272,14 @@
             display: grid;
             grid-template-columns: 1fr 80px 80px 40px;
             gap: 10px;
-            align-items: center;
+            align-items: start;
         }
-        .result-editor-item input {
+        .result-editor-item input,
+        .result-editor-item textarea {
             margin-bottom: 0;
+        }
+        .result-editor-item textarea.result-name {
+            min-height: 80px;
         }
         .add-btn-container {
             margin-top: 15px;
@@ -279,7 +304,7 @@
             <div id="question-text">Đang tải câu hỏi...</div>
             
             <ul id="answer-options">
-                </ul>
+            </ul>
 
             <button id="next-btn" class="btn large success">Câu tiếp theo</button>
         </div>
@@ -302,14 +327,14 @@
             <div id="config-editor">
                 <h3>Câu hỏi</h3>
                 <div id="question-editor-container">
-                    </div>
+                </div>
                 <div class="add-btn-container">
                     <button id="add-question-btn" class="btn success btn-small">Thêm Câu hỏi</button>
                 </div>
 
                 <h3>Kết quả</h3>
                 <div id="result-editor-container">
-                    </div>
+                </div>
                 <div class="add-btn-container">
                     <button id="add-result-btn" class="btn success btn-small">Thêm Nhóm Kết quả</button>
                 </div>
@@ -433,6 +458,7 @@
         let currentConfig;
         let currentQuestionIndex = 0;
         let totalScore = 0;
+        let maxPossibleScore = 0;
 
         const quizContainerEl = document.getElementById('quiz-container'); 
         const quizContentEl = document.getElementById('quiz-content');
@@ -463,7 +489,7 @@
                 if(savedConfig){
                      currentConfig = JSON.parse(savedConfig);
                 } else {
-                    localStorage.setItem('quizConfig', JSON.stringify(defaultConfig));
+                     localStorage.setItem('quizConfig', JSON.stringify(defaultConfig));
                 }
 
             } catch (e) {
@@ -475,6 +501,15 @@
         function startQuiz() {
             currentQuestionIndex = 0;
             totalScore = 0;
+            maxPossibleScore = 0;
+
+            if (currentConfig.questions && currentConfig.questions.length > 0) {
+                maxPossibleScore = currentConfig.questions.reduce((total, question) => {
+                    const maxPoints = Math.max(0, ...question.answers.map(a => a.points));
+                    return total + maxPoints;
+                }, 0);
+            }
+
             resultEl.style.display = 'none';
             typewriterEl.innerHTML = ""; 
             
@@ -571,7 +606,7 @@
                     }
                 }
             }
-            document.getElementById('result-score').innerHTML = `Tổng số điểm: <strong>${totalScore}</strong>`;
+            document.getElementById('result-score').innerHTML = `Tổng số điểm: <strong>${totalScore} / ${maxPossibleScore}</strong>`;
             document.getElementById('result-group').innerHTML = resultText;
             quizContentEl.style.display = 'none';
             progressBarContainer.style.display = 'none';
@@ -598,7 +633,7 @@
             const div = document.createElement('div');
             div.className = 'editor-item result-editor-item';
             div.innerHTML = `
-                <input type="text" class="result-name" placeholder="Tên nhóm (dùng <br> để xuống dòng)" value="${result.name.replace(/<br\s*\/?>/gi, ' ')}">
+                <textarea class="result-name" placeholder="Tên nhóm (dùng <br> để xuống dòng)">${result.name}</textarea>
                 <input type="number" class="result-min" placeholder="Min" value="${result.min}">
                 <input type="number" class="result-max" placeholder="Max" value="${result.max}">
                 <button class="btn-remove" data-action="remove-item">&times;</button>
@@ -628,7 +663,7 @@
                 <input type="text" class="question-text" placeholder="Nội dung câu hỏi" value="${question.text}">
                 <h5>Câu trả lời</h5>
                 <div class="answers-container">
-                    </div>
+                </div>
                 <button class="btn warning btn-small" data-action="add-answer">Thêm Câu trả lời</button>
             `;
             
@@ -677,7 +712,7 @@
             });
 
             resultEditorContainer.querySelectorAll('.result-editor-item').forEach(rItem => {
-                const resultName = rItem.querySelector('.result-name').value;
+                const resultName = rItem.querySelector('.result-name').value; 
                 const resultMin = parseInt(rItem.querySelector('.result-min').value) || 0;
                 const resultMax = parseInt(rItem.querySelector('.result-max').value) || 0;
                 newConfig.results.push({ name: resultName, min: resultMin, max: resultMax });
