@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trắc nghiệm: Mức độ Giác ngộ</title>
+    <title>Mức độ Giác ngộ</title>
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
@@ -40,7 +40,6 @@
             padding: 20px;
         }
 
-        /* --- Các Nút --- */
         #settings-btn-container {
             position: absolute; top: 20px; right: 20px;
         }
@@ -81,7 +80,6 @@
             font-weight: bold;
         }
 
-        /* --- Khung Quiz chính --- */
         #quiz-container {
             background-color: #ffffff; border-radius: var(--border-radius);
             box-shadow: var(--card-shadow); 
@@ -105,7 +103,6 @@
             margin-top: 0; margin-bottom: 25px;
         }
 
-        /* --- Thanh tiến trình --- */
         #progress-bar-container {
             width: 100%; height: 10px; background-color: #e0e0e0;
             border-radius: 5px; margin-bottom: 25px; overflow: hidden;
@@ -115,7 +112,6 @@
             border-radius: 5px; transition: width 0.4s ease-in-out;
         }
 
-        /* --- Khu vực câu hỏi & câu trả lời --- */
         #quiz-content {
             transition: opacity 0.3s ease-in-out;
         }
@@ -153,7 +149,6 @@
         }
 
 
-        /* --- Khu vực Kết quả --- */
         #result { display: none; text-align: center; }
         #result h2 { font-size: 2.2rem; color: var(--primary-color); }
         #result p { 
@@ -186,7 +181,6 @@
             50% { background-color: var(--dark-gray); }
         }
 
-        /* --- CSS CHO MODAL CÀI ĐẶT --- */
         .modal {
             display: none; position: fixed; z-index: 1000;
             left: 0; top: 0; width: 100%; height: 100%;
@@ -488,8 +482,7 @@
             progressBarContainer.style.display = 'block';
             
             if (currentConfig.questions && currentConfig.questions.length > 0) {
-                // TỐI ƯU MỚI: Bỏ qua animation cho câu hỏi đầu tiên
-                showQuestion(currentQuestionIndex, true); // true = skipAnimation
+                showQuestion(currentQuestionIndex, true);
             } else {
                 questionTextEl.textContent = "Không có câu hỏi nào. Vui lòng thêm trong Cài đặt.";
                 answerOptionsEl.innerHTML = "";
@@ -497,9 +490,6 @@
             }
         }
 
-        /**
-         * TỐI ƯU MỚI: Hàm này chỉ cập nhật DOM
-         */
         function populateQuestionDOM(index) {
             const question = currentConfig.questions[index];
             if (!question) return;
@@ -527,33 +517,20 @@
             progressBar.style.width = `${progressPercent}%`;
         }
         
-        /**
-         * TỐI ƯU MỚI: Hàm này được gọi sau khi fade-out hoàn tất
-         */
+
         function onFadeOutComplete() {
-            // Cập nhật DOM
             populateQuestionDOM(currentQuestionIndex);
-            // Kích hoạt fade-in
             quizContentEl.classList.remove('fade-out');
         }
 
-        /**
-         * TỐI ƯU MỚI: Hàm showQuestion giờ có 2 chế độ
-         */
         function showQuestion(index, skipAnimation = false) {
             currentQuestionIndex = index;
             
             if (skipAnimation) {
-                // 1. Chế độ Bỏ qua Animation (khi restart)
-                // Đảm bảo nó đang hiển thị (không bị fade-out)
                 quizContentEl.classList.remove('fade-out');
-                // Cập nhật DOM ngay lập tức
                 populateQuestionDOM(index);
             } else {
-                // 2. Chế độ Animation bình thường (khi chuyển câu)
-                // Lắng nghe sự kiện transition kết thúc
                 quizContentEl.addEventListener('transitionend', onFadeOutComplete, { once: true });
-                // Kích hoạt fade-out
                 quizContentEl.classList.add('fade-out');
             }
         }
@@ -616,8 +593,6 @@
             loadConfig();
             startQuiz();
         }
-
-        // --- Các hàm của trình chỉnh sửa trực quan (Giữ nguyên) ---
 
         function createResultEditor(result = { name: '', min: 0, max: 0 }) {
             const div = document.createElement('div');
@@ -767,7 +742,6 @@
             }
         });
 
-        // --- LẮNG NGHE SỰ KIỆN CHÍNH ---
         document.addEventListener('DOMContentLoaded', initializeApp);
         
         restartBtn.addEventListener('click', startQuiz);
@@ -789,7 +763,7 @@
             setTimeout(() => {
                 const nextIndex = currentQuestionIndex + 1;
                 if (nextIndex < currentConfig.questions.length) {
-                    showQuestion(nextIndex); // Tự động gọi chế độ animation
+                    showQuestion(nextIndex);
                 } else {
                     showResults();
                 }
