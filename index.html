@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trắc nghiệm: Mức độ Giác ngộ</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap');
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #007bff;
+            --light-primary: #e9f5ff;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --light-gray: #f4f7f6;
+            --gray: #ddd;
+            --dark-gray: #666;
+            --text-color: #333;
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+            --border-radius: 12px;
+        }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: var(--light-gray);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* --- Các Nút --- */
+        #settings-btn-container {
+            position: absolute; top: 20px; right: 20px;
+        }
+        .btn {
+            padding: 10px 20px; font-size: 1rem; font-weight: 500;
+            color: #fff; background-color: var(--primary-color);
+            border: none; border-radius: 8px; cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .btn:hover {
+            background-color: #0056b3; transform: translateY(-2px);
+        }
+        .btn.success { background-color: var(--success-color); }
+        .btn.success:hover { background-color: #218838; }
+        .btn.danger { background-color: var(--danger-color); }
+        .btn.danger:hover { background-color: #c82333; }
+        .btn.warning { background-color: var(--warning-color); color: #333; }
+        .btn.warning:hover { background-color: #e0a800; }
+        .btn.large {
+            width: 100%; padding: 15px; font-size: 1.1rem;
+            font-weight: 700; margin-top: 15px;
+        }
+        .btn:disabled {
+            background-color: var(--gray); cursor: not-allowed; transform: none;
+        }
+        .btn.success:disabled { background-color: #a3d9af; }
+        
+        #next-btn {
+            display: none !important;
+        }
+
+        .btn-small {
+            padding: 5px 10px; font-size: 0.9rem; font-weight: 700;
+        }
+        .btn-remove {
+            background-color: transparent; color: var(--danger-color);
+            border: none; font-size: 1.2rem; cursor: pointer; padding: 0 5px;
+            font-weight: bold;
+        }
+
+        /* --- Khung Quiz chính --- */
+        #quiz-container {
+            background-color: #ffffff; border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow); 
+            padding: 40px 50px;
+            width: 100%; 
+            max-width: 750px;
+            overflow: hidden;
+        }
+        
+        @keyframes pulseEffect {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        .pulse-animation {
+            animation: pulseEffect 0.3s ease-in-out 1;
+        }
+        
+        h1 {
+            text-align: center; color: var(--text-color);
+            margin-top: 0; margin-bottom: 25px;
+        }
+
+        /* --- Thanh tiến trình --- */
+        #progress-bar-container {
+            width: 100%; height: 10px; background-color: #e0e0e0;
+            border-radius: 5px; margin-bottom: 25px; overflow: hidden;
+        }
+        #progress-bar {
+            height: 100%; width: 0%; background-color: var(--success-color);
+            border-radius: 5px; transition: width 0.4s ease-in-out;
+        }
+
+        /* --- Khu vực câu hỏi & câu trả lời --- */
+        #quiz-content {
+            transition: opacity 0.3s ease-in-out;
+        }
+        #quiz-content.fade-out { opacity: 0; }
+        #question-text {
+            font-size: 1.6rem;
+            font-weight: 700; color: var(--text-color);
+            margin-bottom: 30px;
+            min-height: 80px;
+        }
+        #answer-options {
+            display: flex; flex-direction: column; gap: 15px;
+            padding-left: 0; list-style-type: none; margin: 0;
+        }
+        #answer-options label {
+            display: block; background-color: #fff; border: 2px solid var(--gray);
+            border-radius: 8px; padding: 18px 25px;
+            cursor: pointer;
+            transition: border-color 0.3s, background-color 0.3s; font-weight: 500;
+            font-size: 1.1rem;
+        }
+        #answer-options label:hover { background-color: var(--light-gray); }
+        #answer-options input[type="radio"] { display: none; }
+        #answer-options input[type="radio"]:checked + label {
+            border-color: var(--primary-color);
+            background-color: var(--light-primary); font-weight: 700;
+        }
+        #answer-options input[type="radio"]:disabled + label {
+            opacity: 0.7;
+            background-color: var(--light-gray);
+            cursor: not-allowed;
+        }
+        #answer-options input[type="radio"]:checked:disabled + label {
+            opacity: 1;
+        }
+
+
+        /* --- Khu vực Kết quả --- */
+        #result { display: none; text-align: center; }
+        #result h2 { font-size: 2.2rem; color: var(--primary-color); }
+        #result p { 
+            font-size: 1.2rem;
+            margin: 18px 0;
+            line-height: 1.6;
+            text-align: left;
+        }
+
+        #typewriter-text {
+            font-style: italic;
+            color: var(--dark-gray);
+            margin-top: 25px;
+            font-size: 1.1rem;
+            min-height: 1.5em; 
+            text-align: center;
+        }
+        .typing-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1em;
+            background-color: var(--dark-gray);
+            animation: blink-caret 0.75s step-end infinite;
+            margin-left: 3px;
+            position: relative;
+            top: 2px;
+        }
+        @keyframes blink-caret {
+            from, to { background-color: transparent; }
+            50% { background-color: var(--dark-gray); }
+        }
+
+        /* --- CSS CHO MODAL CÀI ĐẶT --- */
+        .modal {
+            display: none; position: fixed; z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            overflow: auto; background-color: rgba(0,0,0,0.6);
+        }
+        .modal-content {
+            background-color: #fefefe; margin: 3% auto; padding: 30px;
+            border-radius: var(--border-radius); width: 90%;
+            max-width: 900px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .close-btn {
+            color: #aaa; float: right; font-size: 28px;
+            font-weight: bold; cursor: pointer; line-height: 1;
+        }
+        .close-btn:hover, .close-btn:focus { color: black; }
+        
+        .modal-content h2 { margin-top: 0; }
+        .modal-buttons { margin-top: 20px; display: flex; gap: 10px; }
+
+        #config-editor {
+            max-height: 70vh;
+            overflow-y: auto;
+            padding-right: 15px;
+        }
+        .editor-item {
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .editor-item h4 {
+            margin: 0 0 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .editor-item input[type="text"],
+        .editor-item input[type="number"] {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--gray);
+            border-radius: 5px;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        .editor-item input[type="text"]:focus,
+        .editor-item input[type="number"]:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 5px var(--light-primary);
+        }
+        .answer-editor-item {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .answer-editor-item input[type="text"] {
+            flex-grow: 1; 
+            margin-bottom: 0;
+        }
+        .answer-editor-item input[type="number"] {
+            width: 80px; 
+            margin-bottom: 0;
+        }
+        .result-editor-item {
+            display: grid;
+            grid-template-columns: 1fr 80px 80px 40px;
+            gap: 10px;
+            align-items: center;
+        }
+        .result-editor-item input {
+            margin-bottom: 0;
+        }
+        .add-btn-container {
+            margin-top: 15px;
+            border-top: 1px dashed var(--gray);
+            padding-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="settings-btn-container">
+        <button id="settings-btn" class="btn">⚙️ Cài đặt</button>
+    </div>
+
+    <div id="quiz-container">
+        <h1>Mức độ Giác ngộ của bạn</h1>
+        
+        <div id="progress-bar-container">
+            <div id="progress-bar"></div>
+        </div>
+        <div id="quiz-content">
+            <div id="question-text">Đang tải câu hỏi...</div>
+            
+            <ul id="answer-options">
+                </ul>
+
+            <button id="next-btn" class="btn large success">Câu tiếp theo</button>
+        </div>
+
+        <div id="result">
+            <h2 id="result-title">Kết quả của bạn</h2>
+            <p id="result-score"></p>
+            <p id="result-group"></p>
+            <button id="restart-btn" class="btn large">Làm lại</button>
+            
+            <p id="typewriter-text"></p>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Cài đặt Quiz</h2>
+            
+            <div id="config-editor">
+                <h3>Câu hỏi</h3>
+                <div id="question-editor-container">
+                    </div>
+                <div class="add-btn-container">
+                    <button id="add-question-btn" class="btn success btn-small">Thêm Câu hỏi</button>
+                </div>
+
+                <h3>Kết quả</h3>
+                <div id="result-editor-container">
+                    </div>
+                <div class="add-btn-container">
+                    <button id="add-result-btn" class="btn success btn-small">Thêm Nhóm Kết quả</button>
+                </div>
+            </div>
+            
+            <div class="modal-buttons">
+                <button id="save-settings-btn" class="btn success">Lưu và Tải lại Quiz</button>
+                <button id="reset-settings-btn" class="btn danger">Reset về Mặc định</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultConfig = {
+            "questions": [
+                {
+                    "text": "1️⃣ Khi gặp kẹt xe, bạn sẽ...",
+                    "answers": [
+                        { "text": "A. Bấm còi thật to cho bõ tức", "points": 1 },
+                        { "text": "B. Thở sâu và bật nhạc chill", "points": 2 },
+                        { "text": "C. Nghĩ: “Chắc kiếp trước mình cũng từng là xe”", "points": 3 }
+                    ]
+                },
+                {
+                    "text": "2️⃣ Khi ai đó nói xấu bạn sau lưng, bạn...",
+                    "answers": [
+                        { "text": "A. Phản công liền cho ra ngô ra khoai", "points": 1 },
+                        { "text": "B. Im lặng và mỉm cười", "points": 2 },
+                        { "text": "C. Gửi họ link bài Kinh Kim Cang cho họ đọc", "points": 3 }
+                    ]
+                },
+                {
+                    "text": "3️⃣ Khi bị mất điện thoại, phản ứng đầu tiên của bạn là...",
+                    "answers": [
+                        { "text": "A. “Toang rồi!”", "points": 1 },
+                        { "text": "B. “Thôi, nghiệp đến thì trả”", "points": 2 },
+                        { "text": "C. “Vũ trụ đang giúp mình detox mạng xã hội”", "points": 3 }
+                    ]
+                },
+                {
+                    "text": "4️⃣ Bạn định nghĩa “hạnh phúc” là...",
+                    "answers": [
+                        { "text": "A. Có tiền, có người yêu, có xe", "points": 1 },
+                        { "text": "B. Bình an, không cần gì thêm", "points": 2 },
+                        { "text": "C. Biết cách tắt thông báo nhóm Zalo", "points": 3 }
+                    ]
+                },
+                {
+                    "text": "5️⃣ Khi trời mưa ngay lúc bạn ra ngoài, bạn...",
+                    "answers": [
+                        { "text": "A. Chửi thề nhẹ", "points": 1 },
+                        { "text": "B. Mỉm cười vì được tắm Pháp", "points": 2 },
+                        { "text": "C. Nghĩ “cơn mưa này là bài học về vô thường”", "points": 3 }
+                    ]
+                },
+                {
+                    "text": "6️⃣ Khi người khác khoe thành công, bạn...",
+                    "answers": [
+                        { "text": "A. Thấy khó chịu", "points": 1 },
+                        { "text": "B. Thả tim cho vui", "points": 2 },
+                        { "text": "C. Thầm niệm “vạn pháp duy tâm tạo”", "points": 3 }
+                    ]
+                },
+                {
+                    "text": "7️⃣ Câu bạn thấy hợp với mình nhất là...",
+                    "answers": [
+                        { "text": "A. “Không ai cho không ai cái gì”", "points": 1 },
+                        { "text": "B. “Biết đủ là đủ”", "points": 2 },
+                        { "text": "C. “Ta không là ai, và mọi người cũng không là ai cả”", "points": 3 }
+                    ]
+                },
+                {
+                    "text": "8️⃣ Bạn có kiểm soát được cảm xúc không?",
+                    "answers": [
+                        { "text": "A. Có, nhờ cà phê sáng", "points": 1 },
+                        { "text": "B. Thỉnh thoảng, khi mạng yếu", "points": 2 },
+                        { "text": "C. Không cần kiểm soát — người giác ngộ không có cảm xúc để kiểm soát", "points": 3 }
+                    ]
+                },
+                {
+                    "text": "9️⃣ Khi được hỏi “Bạn là ai?”, bạn trả lời...",
+                    "answers": [
+                        { "text": "A. “Là dân sales / marketing / dân chơi hệ deadline”", "points": 1 },
+                        { "text": "B. “Một linh hồn đang học bài học cuộc sống”", "points": 2 },
+                        { "text": "C. “Không có ai cả, chỉ là dòng ý thức đang trải nghiệm”", "points": 3 }
+                    ]
+                },
+                {
+                    "text": "🔟 Mức độ giác ngộ của bạn được đo bằng...",
+                    "answers": [
+                        { "text": "A. Số lần nhịn được cơn tức", "points": 1 },
+                        { "text": "B. Số lần tắt được điện thoại trước 12h đêm", "points": 2 },
+                        { "text": "C. Số lần nói “Nam Mô A Di Đà Phật” thay vì “vãi thật”", "points": 3 }
+                    ]
+                }
+            ],
+            "results": [
+                { 
+                    "name": "Phàm phu tập sự 🐒<br><br>Bạn đang trong hành trình đầu tiên của giác ngộ. Thỉnh thoảng vẫn bực vì Wi-Fi yếu, nhưng ít ra đã biết “đời không phải lúc nào cũng có sóng.”<br><br>➡️ Gợi ý: Tập “thở” trước khi “phản ứng”.", 
+                    "min": 10, 
+                    "max": 15 
+                },
+                { 
+                    "name": "Cư sĩ an nhiên ☕<br><br>Bạn hiểu đời có drama nhưng vẫn chọn bình an. Biết buông đúng lúc, không cần hơn thua.<br><br>➡️ Gợi ý: Duy trì năng lượng này, vì nụ cười của bạn cũng là một bài thiền.", 
+                    "min": 16, 
+                    "max": 22 
+                },
+                { 
+                    "name": "Tiểu Bồ Tát đô thị 🌆<br><br>Bạn sống giữa phố mà vẫn có tâm thiền trong tim. Đã học cách “thương người, kể cả người từng làm mình đau”.<br><br>➡️ Gợi ý: Chỉ cần thêm chút kiên định, bạn sẽ “level up” thành đại giác ngộ.", 
+                    "min": 23, 
+                    "max": 27
+                },
+                { 
+                    "name": "Cao tăng full giác ngộ 🔱<br><br>Bạn và đời đã hoà làm một — thậm chí đời còn phải “follow” bạn. Không còn tức, không còn sợ — chỉ còn tĩnh lặng và hài hước.<br><br>➡️ Gợi ý: Nên mở lớp “Giác ngộ 101 cho dân văn phòng”.", 
+                    "min": 28, 
+                    "max": 30 
+                }
+            ]
+        };
+
+        let currentConfig;
+        let currentQuestionIndex = 0;
+        let totalScore = 0;
+
+        const quizContainerEl = document.getElementById('quiz-container'); 
+        const quizContentEl = document.getElementById('quiz-content');
+        const questionTextEl = document.getElementById('question-text');
+        const answerOptionsEl = document.getElementById('answer-options');
+        const nextBtn = document.getElementById('next-btn');
+        const resultEl = document.getElementById('result');
+        const progressBar = document.getElementById('progress-bar');
+        const progressBarContainer = document.getElementById('progress-bar-container');
+        const restartBtn = document.getElementById('restart-btn');
+        const typewriterEl = document.getElementById('typewriter-text');
+
+        const modal = document.getElementById('settings-modal');
+        const settingsBtn = document.getElementById('settings-btn');
+        const closeBtn = document.querySelector('.close-btn');
+        const saveSettingsBtn = document.getElementById('save-settings-btn');
+        const resetSettingsBtn = document.getElementById('reset-settings-btn');
+        
+        const questionEditorContainer = document.getElementById('question-editor-container');
+        const resultEditorContainer = document.getElementById('result-editor-container');
+        const addQuestionBtn = document.getElementById('add-question-btn');
+        const addResultBtn = document.getElementById('add-result-btn');
+
+        function loadConfig() {
+            const savedConfig = localStorage.getItem('quizConfig');
+            try {
+                currentConfig = defaultConfig; 
+                if(savedConfig){
+                     currentConfig = JSON.parse(savedConfig);
+                } else {
+                    localStorage.setItem('quizConfig', JSON.stringify(defaultConfig));
+                }
+
+            } catch (e) {
+                console.error("Lỗi parse JSON, sử dụng config mặc định:", e);
+                currentConfig = defaultConfig;
+            }
+        }
+
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            totalScore = 0;
+            resultEl.style.display = 'none';
+            typewriterEl.innerHTML = ""; 
+            
+            quizContentEl.style.display = 'block';
+            progressBarContainer.style.display = 'block';
+            
+            if (currentConfig.questions && currentConfig.questions.length > 0) {
+                // TỐI ƯU MỚI: Bỏ qua animation cho câu hỏi đầu tiên
+                showQuestion(currentQuestionIndex, true); // true = skipAnimation
+            } else {
+                questionTextEl.textContent = "Không có câu hỏi nào. Vui lòng thêm trong Cài đặt.";
+                answerOptionsEl.innerHTML = "";
+                progressBarContainer.style.display = 'none';
+            }
+        }
+
+        /**
+         * TỐI ƯU MỚI: Hàm này chỉ cập nhật DOM
+         */
+        function populateQuestionDOM(index) {
+            const question = currentConfig.questions[index];
+            if (!question) return;
+
+            questionTextEl.textContent = question.text;
+            answerOptionsEl.innerHTML = ''; 
+
+            question.answers.forEach((answer, ansIndex) => {
+                const answerId = `q${index}_ans${ansIndex}`;
+                const li = document.createElement('li');
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'answer';
+                input.id = answerId;
+                input.value = answer.points;
+                const label = document.createElement('label');
+                label.htmlFor = answerId;
+                label.textContent = answer.text;
+                li.appendChild(input);
+                li.appendChild(label);
+                answerOptionsEl.appendChild(li);
+            });
+
+            const progressPercent = ((index + 1) / currentConfig.questions.length) * 100;
+            progressBar.style.width = `${progressPercent}%`;
+        }
+        
+        /**
+         * TỐI ƯU MỚI: Hàm này được gọi sau khi fade-out hoàn tất
+         */
+        function onFadeOutComplete() {
+            // Cập nhật DOM
+            populateQuestionDOM(currentQuestionIndex);
+            // Kích hoạt fade-in
+            quizContentEl.classList.remove('fade-out');
+        }
+
+        /**
+         * TỐI ƯU MỚI: Hàm showQuestion giờ có 2 chế độ
+         */
+        function showQuestion(index, skipAnimation = false) {
+            currentQuestionIndex = index;
+            
+            if (skipAnimation) {
+                // 1. Chế độ Bỏ qua Animation (khi restart)
+                // Đảm bảo nó đang hiển thị (không bị fade-out)
+                quizContentEl.classList.remove('fade-out');
+                // Cập nhật DOM ngay lập tức
+                populateQuestionDOM(index);
+            } else {
+                // 2. Chế độ Animation bình thường (khi chuyển câu)
+                // Lắng nghe sự kiện transition kết thúc
+                quizContentEl.addEventListener('transitionend', onFadeOutComplete, { once: true });
+                // Kích hoạt fade-out
+                quizContentEl.classList.add('fade-out');
+            }
+        }
+
+        function startTypewriter(text, element, speed = 50) {
+            element.innerHTML = ""; 
+            const textSpan = document.createElement('span');
+            const cursorSpan = document.createElement('span');
+            cursorSpan.className = 'typing-cursor';
+            
+            element.appendChild(textSpan);
+            element.appendChild(cursorSpan);
+
+            let i = 0;
+            function typeChar() {
+                if (i < text.length) {
+                    textSpan.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(typeChar, speed);
+                } else {
+                    setTimeout(() => {
+                        cursorSpan.style.animation = 'none';
+                        cursorSpan.style.backgroundColor = 'transparent';
+                    }, 3000);
+                }
+            }
+            
+            setTimeout(typeChar, 500); 
+        }
+
+        function showResults() {
+            let resultText = "Bạn không thuộc nhóm nào cả.";
+            if (currentConfig.results) {
+                for (const resultGroup of currentConfig.results) {
+                    if (totalScore >= resultGroup.min && totalScore <= resultGroup.max) {
+                        resultText = resultGroup.name;
+                        break;
+                    }
+                }
+            }
+            document.getElementById('result-score').innerHTML = `Tổng số điểm: <strong>${totalScore}</strong>`;
+            document.getElementById('result-group').innerHTML = resultText;
+            quizContentEl.style.display = 'none';
+            progressBarContainer.style.display = 'none';
+            resultEl.style.display = 'block';
+
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 150,
+                    spread: 180,
+                    origin: { y: 0.6 }
+                });
+            }
+
+            const summaryText = "Giác ngộ không ở chỗ bạn biết nhiều, mà ở chỗ bạn “bớt căng” hơn hôm qua 😌";
+            startTypewriter(summaryText, typewriterEl, 50);
+        }
+        
+        function initializeApp() {
+            loadConfig();
+            startQuiz();
+        }
+
+        // --- Các hàm của trình chỉnh sửa trực quan (Giữ nguyên) ---
+
+        function createResultEditor(result = { name: '', min: 0, max: 0 }) {
+            const div = document.createElement('div');
+            div.className = 'editor-item result-editor-item';
+            div.innerHTML = `
+                <input type="text" class="result-name" placeholder="Tên nhóm (dùng <br> để xuống dòng)" value="${result.name.replace(/<br\s*\/?>/gi, ' ')}">
+                <input type="number" class="result-min" placeholder="Min" value="${result.min}">
+                <input type="number" class="result-max" placeholder="Max" value="${result.max}">
+                <button class="btn-remove" data-action="remove-item">&times;</button>
+            `;
+            return div;
+        }
+
+        function createAnswerEditor(answer = { text: '', points: 0 }) {
+            const div = document.createElement('div');
+            div.className = 'answer-editor-item';
+            div.innerHTML = `
+                <input type="text" class="answer-text" placeholder="Nội dung câu trả lời" value="${answer.text}">
+                <input type="number" class="answer-points" placeholder="Điểm" value="${answer.points}">
+                <button class="btn-remove" data-action="remove-item">&times;</button>
+            `;
+            return div;
+        }
+
+        function createQuestionEditor(question = { text: '', answers: [] }) {
+            const div = document.createElement('div');
+            div.className = 'editor-item';
+            div.innerHTML = `
+                <h4>
+                    <span>Câu hỏi</span>
+                    <button class="btn-remove" data-action="remove-item">&times;</button>
+                </h4>
+                <input type="text" class="question-text" placeholder="Nội dung câu hỏi" value="${question.text}">
+                <h5>Câu trả lời</h5>
+                <div class="answers-container">
+                    </div>
+                <button class="btn warning btn-small" data-action="add-answer">Thêm Câu trả lời</button>
+            `;
+            
+            const answersContainer = div.querySelector('.answers-container');
+            question.answers.forEach(answer => {
+                answersContainer.appendChild(createAnswerEditor(answer));
+            });
+
+            return div;
+        }
+
+        function populateEditor() {
+            questionEditorContainer.innerHTML = '';
+            resultEditorContainer.innerHTML = '';
+
+            if (currentConfig.questions) {
+                currentConfig.questions.forEach(q => {
+                    questionEditorContainer.appendChild(createQuestionEditor(q));
+                });
+            }
+
+            if (currentConfig.results) {
+                currentConfig.results.forEach(r => {
+                    resultEditorContainer.appendChild(createResultEditor(r));
+                });
+            }
+        }
+
+        function serializeEditorToConfig() {
+            const newConfig = {
+                questions: [],
+                results: []
+            };
+
+            questionEditorContainer.querySelectorAll('.editor-item').forEach(qItem => {
+                const questionText = qItem.querySelector('.question-text').value;
+                const answers = [];
+
+                qItem.querySelectorAll('.answer-editor-item').forEach(aItem => {
+                    const answerText = aItem.querySelector('.answer-text').value;
+                    const answerPoints = parseInt(aItem.querySelector('.answer-points').value) || 0;
+                    answers.push({ text: answerText, points: answerPoints });
+                });
+
+                newConfig.questions.push({ text: questionText, answers: answers });
+            });
+
+            resultEditorContainer.querySelectorAll('.result-editor-item').forEach(rItem => {
+                const resultName = rItem.querySelector('.result-name').value;
+                const resultMin = parseInt(rItem.querySelector('.result-min').value) || 0;
+                const resultMax = parseInt(rItem.querySelector('.result-max').value) || 0;
+                newConfig.results.push({ name: resultName, min: resultMin, max: resultMax });
+            });
+
+            return newConfig;
+        }
+
+        settingsBtn.onclick = function() {
+            populateEditor();
+            modal.style.display = "block";
+        }
+        
+        closeBtn.onclick = function() { modal.style.display = "none"; }
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        saveSettingsBtn.onclick = function() {
+            try {
+                const newConfig = serializeEditorToConfig();
+                
+                localStorage.setItem('quizConfig', JSON.stringify(newConfig));
+                initializeApp();
+                modal.style.display = "none";
+                alert("Đã lưu và tải lại quiz thành công!");
+            } catch (e) {
+                alert("Đã xảy ra lỗi khi lưu!\n\n" + e.message);
+            }
+        }
+        
+        resetSettingsBtn.onclick = function() {
+            if (confirm("Bạn có chắc muốn xóa cài đặt và quay về mặc định?")) {
+                localStorage.removeItem('quizConfig');
+                currentConfig = defaultConfig;
+                initializeApp();
+                modal.style.display = "none";
+            }
+        }
+
+        addQuestionBtn.onclick = function() {
+            questionEditorContainer.appendChild(createQuestionEditor());
+        }
+
+        addResultBtn.onclick = function() {
+            resultEditorContainer.appendChild(createResultEditor());
+        }
+
+        document.getElementById('config-editor').addEventListener('click', function(e) {
+            const target = e.target;
+            const action = target.dataset.action;
+
+            if (action === 'remove-item') {
+                target.closest('.editor-item, .answer-editor-item, .result-editor-item').remove();
+            }
+
+            if (action === 'add-answer') {
+                const answersContainer = target.closest('.editor-item').querySelector('.answers-container');
+                answersContainer.appendChild(createAnswerEditor());
+            }
+        });
+
+        // --- LẮNG NGHE SỰ KIỆN CHÍNH ---
+        document.addEventListener('DOMContentLoaded', initializeApp);
+        
+        restartBtn.addEventListener('click', startQuiz);
+        
+        answerOptionsEl.addEventListener('change', (e) => {
+            quizContainerEl.classList.add('pulse-animation');
+            quizContainerEl.addEventListener('animationend', () => {
+                quizContainerEl.classList.remove('pulse-animation');
+            }, { once: true });
+
+            const selectedAnswer = e.target;
+            if (selectedAnswer) {
+                 totalScore += parseInt(selectedAnswer.value);
+            }
+            
+            const allInputs = answerOptionsEl.querySelectorAll('input[type="radio"]');
+            allInputs.forEach(input => input.disabled = true);
+
+            setTimeout(() => {
+                const nextIndex = currentQuestionIndex + 1;
+                if (nextIndex < currentConfig.questions.length) {
+                    showQuestion(nextIndex); // Tự động gọi chế độ animation
+                } else {
+                    showResults();
+                }
+            }, 50);
+        });
+
+    </script>
+
+</body>
+</html>
